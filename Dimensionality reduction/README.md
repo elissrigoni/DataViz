@@ -1,7 +1,7 @@
 # countries.csv
 
 `df = pd.read_csv('https://raw.githubusercontent.com/elissrigoni/DataViz/main/Text_12Jun20/countries.csv', decimal = ',')`
-`df = df.dropna()
+`df = df.dropna()`
 
 
 **IF THE TARGET VARIABLE IS FLOAT YOU HAVE TO CONVERT IT IN INT:**
