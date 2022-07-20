@@ -1,0 +1,3 @@
+IF THE TARGET VARIABLE IS FLOAT YOU HAVE TO CONVERT IT IN INT:
+
+df = df.astype({'Climate':'int'})
