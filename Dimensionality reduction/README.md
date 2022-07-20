@@ -15,8 +15,11 @@ df = df.dropna()
 y = df.Climate.values
 
 `unique, counts = np.unique(y, return_counts=True)`
+
 `classes = len(counts)`
 
 `from sklearn.preprocessing import StandardScaler`
+
 `sc = StandardScaler()`
-`x = sc.fit_transform(x)
+
+`x = sc.fit_transform(x)`
