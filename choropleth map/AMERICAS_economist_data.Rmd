@@ -1,0 +1,51 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# EXERCISE 4
+
+[0-7 points] Using the datafile economist_data.csv, prepare a chloroplet map of a geographical region of your choice (Europe, Asia, etc) displaying one (or more) of the columns HDI.Rank, HDI, CPI. 
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(sf)
+```
+
+
+```{r}
+map_regions <- read.csv("economist_data.csv")
+
+americas_map <- map_regions %>% filter(Region == 'Americas')
+
+americas_map
+```
+
+```{r}
+library(rnaturalearth)
+library(ggrepel)
+
+# get americas map from Natural Earth
+world <- ne_countries(type = 'map_units', returnclass = 'sf', continent = c('south america','north america'))%>% mutate(Country = admin)
+
+```
+
+```{r}
+final_map <-right_join(world, americas_map, by="Country")
+final_map %>% distinct(final_map$Country)
+
+```
+
+```{r}
+# binning, discritizing HID.Rank
+final_map$scale_HDI.Rank <- cut(final_map$HDI.Rank, seq(0, 160, by=20))
+
+
+ggplot(final_map)+geom_sf(aes(fill=scale_HDI.Rank))+theme_classic()+
+  theme(axis.text = element_blank(), 
+        axis.line = element_blank(),
+        axis.ticks = element_blank())+
+  labs(fill='HDI Rank', title = 'Chloroplet map of Americas')+
+  scale_fill_brewer(palette = 4)
+```

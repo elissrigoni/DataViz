@@ -1,0 +1,81 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# EXERCISE 4
+[0-7 points] Using the datafiles states_geo.tsv and states_vote.tsv,
+prepare a choropleth map of the US States including at least one
+socioeconomic feature from states_geo.tsv and an election-related
+variable from states_vote.tsv
+```{r}
+df_map <-  read.table("states_geo.tsv", sep=',', header = TRUE)
+votes <- read.table("states_vote.tsv", sep=',', header = TRUE)
+
+head(df_map)
+head(votes)
+
+```
+
+```{r}
+library(tidyverse)
+states_map <- map_data("state")# simple map of the continental United State
+states_map$state =  str_to_title(states_map$region)
+
+head(states_map)
+```
+
+
+```{r}
+library(dplyr)
+final_map_1 <- inner_join(df_map, votes, by= 'state')
+head(final_map_1)
+```
+
+```{r}
+# join us_state map and final_map_1
+final_map <- inner_join(final_map_1, states_map, by= 'state')
+head(final_map)
+```
+
+
+```{r}
+options( scipen = 999 )
+# discretizing pop
+final_map$poverty <- cut(final_map$poverty, seq(60000, 5000000, by=500000))
+```
+
+```{r}
+# political orientation of each state
+
+state_coord <- final_map %>% select(state, lat, long) %>% 
+  group_by(state) %>% 
+  summarize(lat = mean(lat), long = mean(long) )
+                                      
+
+state_orien <- final_map %>% distinct(state, called, group)
+```
+
+
+```{r}
+polic_orient <- inner_join(state_orien, state_coord, by = 'state')
+```
+
+
+```{r}
+ggplot(final_map, aes(x =long, y=lat, group = group))+
+  geom_polygon(aes(fill=poverty), col='black') +#socioeconomic feature from states_geo.tsv
+  theme_classic()+ 
+  labs(title='US States', subtitle = 'Poverty and Political Orientation', 
+       x='', y='', fill= 'Poverty')+
+  theme(axis.text = element_blank(), 
+        axis.line = element_blank(),
+        axis.ticks = element_blank())+
+  scale_fill_brewer(palette = 5)+
+  geom_label_repel(aes(label=called), data= polic_orient, size = 3, 
+                   min.segment.length = 0, alpha = 0.85) #election-related variable from states_vote.tsv
+  
+```
+
+
+

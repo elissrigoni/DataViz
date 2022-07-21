@@ -1,0 +1,76 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# EXERCISE 4
+[0-7 points] Using the datafiles economy.csv and demography.csv, prepare a choropleth map of the italian regions including at least one data column from both datafiles.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(sf)
+```
+
+
+```{r}
+economy <- read.csv("economy.csv")
+demo <- read.csv("demography.csv")
+
+(economy)
+(demo)
+```
+
+```{r}
+eco_demo <- left_join(demo, economy, by = "Region")
+
+eco_demo
+```
+
+
+
+
+```{r}
+geojson_it <- read_sf("https://raw.githubusercontent.com/filvi/data-viz/master/11-09-2020/limits_IT_regions.geojson") 
+
+
+geojson_it <- geojson_it %>% mutate(reg_name = str_replace(reg_name,"Valle d'Aosta/Vallée d'Aoste",  "Valle d'Aosta"),
+                                    reg_name = str_replace(reg_name, "Trentino-Alto Adige/Südtirol" ,"Trentino-Alto Adige"))
+
+geojson_it <- geojson_it %>% mutate(Region = reg_name)
+
+```
+
+
+
+```{r}
+map_italy <- st_as_sf(right_join(eco_demo, geojson_it, by = 'Region' ))
+
+```
+
+
+
+```{r}
+# discretizing 
+map_italy$Pro.capite.GDP..Italy.100. <- cut(map_italy$Pro.capite.GDP..Italy.100., seq(40, 140 , by=20))
+
+map_italy$Density..ab..km.. <- cut(map_italy$Density..ab..km.., seq(0, 450 , by=50))
+
+
+```
+
+```{r}
+ggplot(map_italy)+ geom_sf(aes(fill= Pro.capite.GDP..Italy.100.))+theme_classic()+
+   geom_sf(data = st_centroid(map_italy), 
+           aes(size = Density..ab..km.. ), alpha = 0.6, color = "black", shape= 18)+
+  theme(axis.text = element_blank(), 
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = 'left')+
+  scale_fill_brewer(palette = 17)   
+```
+
+
+
+
+

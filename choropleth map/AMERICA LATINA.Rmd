@@ -1,0 +1,58 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# EXERCISE 4
+[0-7 points] Using the datafile covid.csv, prepare two maps showing
+the difference at country level of the Covid19 cases in Latin America
+on April, the 1st and on July, the 1st.
+
+```{r}
+library(tidyverse)
+dataf <- read.csv('covid.csv')
+head(dataf)
+dataf %>% filter(continentExp=='America') %>% 
+  distinct(countriesAndTerritories,countryterritoryCode )
+```
+
+
+```{r}
+# create  df: Bolivia and Cuba (on April, the 1st and on July, the 1st)
+
+df_al <-  dataf %>% filter(countryterritoryCode == 'BOL' | countryterritoryCode == 'CHL' ) %>%   filter(dateRep =='01/04/2020'| dateRep =='01/07/2020' )
+head(df_al)
+
+```
+
+```{r}
+library(rnaturalearth)
+library(ggrepel)
+
+# get americas map from Natural Earth
+world <- ne_countries(type = 'map_units', returnclass = 'sf', continent = 'south america')%>% mutate(countryterritoryCode = adm0_a3)
+
+```
+
+
+```{r}
+final_map <- right_join(world, df_al, by = 'countryterritoryCode')
+
+# discretizing death
+final_map$cases <- cut(final_map$cases, seq(0, 3500, by=100))
+
+```
+
+```{r}
+#plot
+ggplot(final_map)+ geom_sf(aes(fill=cases), na.rm = T)+
+  facet_wrap(~ dateRep, nrow = 1)+theme_classic()+
+  theme(axis.text = element_blank(), 
+        axis.line = element_blank(),
+        axis.ticks = element_blank())+
+  labs(fill='Cases', title = 'Map of cases America Latina ')+
+   scale_fill_brewer(palette = 7)
+
+```
+
+

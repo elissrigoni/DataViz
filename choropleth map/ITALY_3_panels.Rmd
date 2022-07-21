@@ -1,0 +1,133 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# EXERCISE 4
+[0-7 points] The datafile census.xslx collects the regional italian population data for the years 1951-2011. Using this data (or a subset of) prepare a data visualization composed of at least two panels, one being a choropleth map and the other being any statistical chart of your choice.
+
+```{r}
+library(tidyverse)
+library(readxl)
+dataf <-  read_xlsx("census.xlsx") %>% filter(ANNI == '2011' | ANNI =='1951')
+```
+
+
+```{r}
+# remove columns "ANNI" and transpose df
+regions <- as.data.frame(t(dataf[-c(1)]))
+
+# rename columns 
+regions <- cbind(rownames(regions), regions)
+rownames(regions) <- NULL
+colnames(regions) <- c('reg_name', "year_1951", "year_2011")
+
+regions <-  regions %>% mutate( reg_name = str_replace(reg_name,"Valle d'Aosta-Vallée d'Aoste",  "Valle d'Aosta/Vallée d'Aoste"))
+
+regions
+```
+
+
+```{r}
+# map of italy
+library(sf)
+geojson_it <- read_sf("https://raw.githubusercontent.com/filvi/data-viz/master/11-09-2020/limits_IT_regions.geojson") 
+
+```
+
+Since Trento and Bolzano-Bozen  are included in Trentino-Alto Adige/Südtirol, we do not consider them in our map.
+
+```{r}
+final_map <- st_as_sf(inner_join(regions,geojson_it, by= 'reg_name'))
+```
+
+```{r}
+# discretizing 
+final_map$year_2011 <- cut(final_map$year_2011, seq(0, 10000 , by=1000))
+final_map$year_1951 <- cut(final_map$year_1951, seq(0, 10000 , by= 1000))
+
+```
+
+```{r}
+# remove scientific notation
+options(scipen = 999)
+
+# plot 2011
+p1 <- ggplot(final_map)+ geom_sf(aes(fill= year_2011))+theme_void()+
+  theme(axis.text = element_blank(), 
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+         plot.title = element_text(colour = 'firebrick4', face = 'bold'))+
+  scale_fill_brewer(palette = 17)+
+  labs(title= 'Regional Italian Population in 2011', fill ='Popualtion')
+
+p1
+```
+
+```{r}
+# plot 1951
+p2 <- ggplot(final_map)+ geom_sf(aes(fill= year_1951))+theme_void()+
+  theme(axis.text = element_blank(), 
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        plot.title = element_text(colour = 'darkgreen', face = 'bold'))+
+  scale_fill_brewer(palette = 'BuGn')+
+  labs(title= 'Regional Italian Population in 1951', fill ='Population')
+p2
+```
+
+```{r}
+regions <- regions %>% arrange(desc(year_2011))
+
+# for the correct ordering of the dumbbells
+regions$reg_name <- factor(regions$reg_name, 
+                           levels=as.character(regions$reg_name)) 
+```
+
+
+
+```{r}
+library(ggalt)
+p3 <- ggplot(regions, aes(x=year_1951, xend= year_2011, y= reg_name , group= reg_name))+
+      geom_dumbbell(color="skyblue", 
+                  size=0.75, 
+                  colour_xend="darkblue")+
+    labs(x=NULL, 
+         y=NULL, 
+         title= "Regional Italian Population Change: 1951 vs 2011") +
+    theme_classic() +
+    theme(plot.title = element_text(hjust=0.9, face="bold", colour = "darkblue"),
+          plot.background=element_rect(fill="#f7f7f7"),
+          panel.background=element_rect(fill="#f7f7f7"),
+          panel.grid.minor=element_blank(),
+          panel.grid.major.y=element_blank(),
+          panel.grid.major.x=element_line(),
+          axis.ticks=element_blank(),
+          panel.border=element_blank(), 
+          axis.text.y = element_text(size =5))
+
+p3
+```
+
+
+```{r}
+library(ggpubr)
+
+ggarrange(ggarrange(p2, p1, ncol = 2), # First row 
+          p3, nrow = 2 ) 
+```
+
+
+
+```{r}
+# alternative to fix the dimension of the plot
+library(ggpubr)
+library(gridExtra)
+
+gridExtra::grid.arrange(ggarrange(p2, p1, ncol = 2), # First row 
+          p3, # second row
+          nrow = 2,
+          heights=grid::unit(c(5,7), "cm") )
+```
+```
+
