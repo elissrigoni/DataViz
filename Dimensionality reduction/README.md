@@ -12,7 +12,7 @@
 `x = df[df.columns.difference((['Climate', 'Country', 'Region']))]`
 
 # define target variable
-y = df.Climate.values
+`y = df.Climate.values`
 
 `unique, counts = np.unique(y, return_counts=True)`
 
